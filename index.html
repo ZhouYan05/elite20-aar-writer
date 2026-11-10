@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elite20 AAR 生成器 — 用 AI 写结构化复盘</title>
+<meta name="description" content="输入本周的预期与实际，AI 按 KSTAR 结构生成 AAR 复盘：S情境/T任务/A行动/R结果/ΔR偏差/失败分析/下周计划。免注册，打开即用。">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🧠 Elite20 AAR 生成器</h1>
+      <p class="sub">输入预期与实际，AI 帮你生成结构化复盘（KSTAR 格式）——Elite20 C8/C9 每周 AAR 的加速器</p>
+    </div>
+    <button id="btnSettings" class="ghost" title="模型设置">⚙️ 模型设置</button>
+  </header>
+
+  <div id="settingsPanel" class="panel hidden">
+    <h2>模型设置</h2>
+    <p class="muted">默认使用免费 AI 端点（pollinations.ai，无需注册，每分钟约 1 次）。需要更高频次/更高质量？填入你自己的 OpenAI 兼容 API Key（仅存于浏览器内存，不会上传）。</p>
+    <label>API Key（可选，OpenAI 兼容）
+      <input type="password" id="apiKey" placeholder="sk-… 留空则用免费端点">
+    </label>
+    <label>API Base URL（可选）
+      <input type="text" id="apiBase" placeholder="https://api.openai.com/v1（或任意兼容网关）">
+    </label>
+    <label>模型
+      <input type="text" id="apiModel" placeholder="默认：免费端点 openai / 自备 key 时如 gpt-4o-mini">
+    </label>
+    <button id="btnSaveSettings">保存设置</button>
+  </div>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>1️⃣ 基本信息</h2>
+      <label>挑战 / 项目
+        <select id="challenge">
+          <option value="C8 真实项目">C8 真实项目落地</option>
+          <option value="C9 自驱项目">C9 自驱项目</option>
+          <option value="C10 个人智能体">C10 个人智能体</option>
+          <option value="C1">C1 课程资料获取与翻译</option>
+          <option value="C2">C2 AI for Math 论文</option>
+          <option value="C2A">C2A 衡量 AGI 的认知能力</option>
+          <option value="C2G">C2G 参数高尔夫</option>
+          <option value="C3">C3 群内高质量参与</option>
+          <option value="C4">C4 技能分享与传播</option>
+          <option value="C4A">C4A 技能提交自动评审</option>
+          <option value="C4B">C4B 公众号文章生成技能</option>
+          <option value="C4C">C4C 作业自动求解与排版</option>
+          <option value="C4D">C4D 本地大模型 Agent 技能</option>
+          <option value="C5">C5 GitHub Repository</option>
+          <option value="C5A">C5A GitHub 入门与仓库理解</option>
+          <option value="C6">C6 Web Application</option>
+          <option value="C6A">C6A 提交数据仪表盘</option>
+          <option value="C7">C7 内容传播</option>
+          <option value="C10H">C10H Hermes Agent</option>
+          <option value="自定义项目">自定义项目</option>
+        </select>
+      </label>
+      <label id="customWrap" class="hidden">自定义项目名
+        <input type="text" id="customName" placeholder="例如：食堂智推">
+      </label>
+      <label>周次
+        <input type="number" id="week" min="1" max="52" value="1">
+      </label>
+      <label>风格
+        <select id="style">
+          <option value="concise">精炼（150-300 字，只写干货）</option>
+          <option value="standard" selected>标准（完整 KSTAR 结构，适合提交）</option>
+          <option value="detailed">详细（展开分析，含失败根因）</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="panel">
+      <h2>2️⃣ 本周素材</h2>
+      <label>预期产出 R̂（本周计划做什么 / 预期结果）
+        <textarea id="expected" rows="3" placeholder="例：完成 C6 Web App 的部署，拿到公开 URL；收集 5 份用户反馈"></textarea>
+      </label>
+      <label>实际产出 R（实际做了什么 / 实际结果）
+        <textarea id="actual" rows="3" placeholder="例：App 已部署上线 https://…；收到 3 份反馈，2 人卡在手机端布局"></textarea>
+      </label>
+      <label>失败 / 卡点（可选，但强烈建议如实填写）
+        <textarea id="failures" rows="3" placeholder="例：部署时环境变量未生效，排查 2 小时；手机端按钮点击区域太小"></textarea>
+      </label>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="btn-row">
+      <button id="btnGenerate" class="primary">✨ 生成 AAR</button>
+      <span id="status" class="muted"></span>
+    </div>
+    <div id="outputWrap" class="hidden">
+      <div class="out-head">
+        <h2>3️⃣ 生成的 AAR</h2>
+        <div class="btn-row">
+          <button id="btnCopy" class="ghost">📋 复制</button>
+          <button id="btnDownload" class="ghost">⬇ 下载 .md</button>
+          <button id="btnRegenerate" class="ghost">🔄 重新生成</button>
+        </div>
+      </div>
+      <pre id="output"></pre>
+    </div>
+  </section>
+
+  <footer class="muted">
+    本工具由 AI 辅助开发（Claude Code）。生成内容仅供参考，请审校后提交——AAR 的核心是真实。
+    <a href="https://github.com/ZhouYan05/elite20-aar-writer" target="_blank">GitHub 源码</a> ·
+    AI 端点：pollinations.ai（免费）或自备 OpenAI 兼容 Key
+  </footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
